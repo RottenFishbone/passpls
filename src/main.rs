@@ -1,7 +1,9 @@
 use std::borrow::BorrowMut;
+use std::io::Write;
 
 use clap::Parser;
 use rand::{rngs::OsRng, RngCore, prelude::SliceRandom, Rng};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -45,6 +47,10 @@ struct Args {
     /// Outputs some dictionary statistics and implications
     #[clap(short = 'I', long)]
     dict_info: bool,
+
+    /// Disables color output and carats for non-terminal generators
+    #[clap(short = 'N', long)]
+    no_term: bool,
 }
 
 fn main() {
@@ -87,10 +93,44 @@ fn main() {
             .expect("Failed to select a word from the dictionary");
 
         words.push(word.to_owned());
-        words.push(" ".to_string());
     }
- 
-    println!("{}", words.concat());
+    
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+    let mut spec = ColorSpec::new();
+    spec.set_fg(Some(Color::Red))
+        .set_bold(true);
+
+    // Prevent extra info when outputting to non-terminal caller
+    if args.no_term { 
+        println!("{}", words.concat());            
+        return 
+    }
+    
+    for word in &words {
+        stdout.set_color(&spec.clone()).unwrap();
+        write!(&mut stdout, "{}", &word[..1]).unwrap();
+        stdout.reset().unwrap();
+        write!(&mut stdout, "{}", &word[1..]).unwrap();
+    }
+    write!(&mut stdout, "\n").unwrap();
+
+    let indicators = words.iter()
+        .map(|w| {
+            format!("^{}", (1..w.len()).map(|_| " ".to_string()).collect::<String>())
+        })
+        .collect::<String>();
+    println!("{}", indicators);
+    println!("Length: {}", words.concat().len());
+    if args.pass_info {
+        let len: u32 = dict.len().try_into().unwrap();
+        let len_f: f64 = len.try_into().unwrap();
+        println!("Entropy Estimates:\n\tknown method: {} bits",len_f.powi(words.len().try_into().unwrap()).log2().floor());
+        println!("\n\tbruteforce:");
+        println!("\t\tlowercase: {} bits", (26_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
+        println!("\t\tmixedcase: {} bits", (52_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
+        println!("\t\talphanum: {} bits", (62_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
+        println!("\t\talpha+symbol: {} bits", (82_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
+    }
 }
 
 
