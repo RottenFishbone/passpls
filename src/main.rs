@@ -15,11 +15,13 @@ struct Args {
     /// Do not print the output to stdout
     #[clap(short = 'H', long)]
     hidden: bool,
+    
 
-    /// Copies the output to the system clipboard. 
+    /// Copies the result to the system clipboard. 
     ///
     /// Multiple passwords will be newline delimited.
     #[clap(short, long)]
+    #[cfg(feature = "clipboard")]
     copy: bool,
 
     /// How many passwords to generate
@@ -40,27 +42,21 @@ struct Args {
     #[clap(short = 'w', long, default_value_t = 3)]
     min_words: u8,
 
-    /// Outputs some password statistics and info alonside a generated password
-    #[clap(short = 'i', long)]
-    pass_info: bool,
-
     /// Outputs some dictionary statistics and implications
-    #[clap(short = 'I', long)]
+    #[clap(long)]
     dict_info: bool,
 
-    /// Disables color output and carats for non-terminal generators
+    #[clap(long)]
+    dump_dict: bool,
+
+    /// Disables color output and carats for piping/interop
     #[clap(short = 'N', long)]
-    no_term: bool,
+    no_style: bool,
 }
 
 fn main() {
     // Load CLI arguments
     let args = Args::parse();
-
-    // Seed the RNG (OsRng is cryptographically secure)
-    let mut key = [0u8; 16];
-    OsRng.fill_bytes(&mut key);
-    // TODO combine with seeding from random.org
 
     // Load our dictionary of word candidates
     let dict: Vec<String>;
@@ -70,11 +66,23 @@ fn main() {
     else{
         let dict_str = include_str!("../assets/dict.txt");
         dict = dict_str.lines()
-            .skip_while(|line| line.eq_ignore_ascii_case("---"))
+            .skip_while(|line| !line.eq_ignore_ascii_case("---"))
+            .skip(1)
             .map(|line| String::from(line))
             .collect();
     }
     
+    if args.dump_dict {
+        for word in dict.iter() {
+            println!("{}", word);
+        }
+        return;
+    }
+    
+    // Seed the RNG (OsRng is cryptographically secure)
+    let mut key = [0u8; 16];
+    OsRng.fill_bytes(&mut key);
+    // TODO optionally combine with seeding from random.org
 
     // Choose the number of words to generate
     let num_words: u8;
@@ -101,7 +109,7 @@ fn main() {
         .set_bold(true);
 
     // Prevent extra info when outputting to non-terminal caller
-    if args.no_term { 
+    if args.no_style { 
         println!("{}", words.concat());            
         return 
     }
@@ -121,16 +129,6 @@ fn main() {
         .collect::<String>();
     println!("{}", indicators);
     println!("Length: {}", words.concat().len());
-    if args.pass_info {
-        let len: u32 = dict.len().try_into().unwrap();
-        let len_f: f64 = len.try_into().unwrap();
-        println!("Entropy Estimates:\n\tknown method: {} bits",len_f.powi(words.len().try_into().unwrap()).log2().floor());
-        println!("\n\tbruteforce:");
-        println!("\t\tlowercase: {} bits", (26_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
-        println!("\t\tmixedcase: {} bits", (52_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
-        println!("\t\talphanum: {} bits", (62_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
-        println!("\t\talpha+symbol: {} bits", (82_f64).powi(words.concat().len().try_into().unwrap()).log2().floor());
-    }
 }
 
 

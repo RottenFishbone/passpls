@@ -1,6 +1,6 @@
 [package]
 name = "passpls"
-author = "Jayden Dumouchel <jdumouch@ualberta.ca>"
+authors = ["Jayden Dumouchel <jdumouch@ualberta.ca>"]
 version = "0.1.0"
 edition = "2021"
 
@@ -8,3 +8,9 @@ edition = "2021"
 clap = { version = "3.1.8", features = ["derive"] }
 rand = { version = "0.8.5", features = ["getrandom"] }
 termcolor = { version = "1.1.3" }
+
+clipboard = { version = "0.5.0", optional = true }
+
+[features]
+default = [ "clipboard" ]
+clipboard = [ "dep:clipboard" ]
