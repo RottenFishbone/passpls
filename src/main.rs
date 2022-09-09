@@ -3,6 +3,8 @@ use std::borrow::BorrowMut;
 use clap::Parser;
 use rand::{rngs::OsRng, RngCore, prelude::SliceRandom, Rng};
 
+use std::fs;
+
 #[cfg(feature = "style")]
 use std::io::Write;
 #[cfg(feature = "style")]
@@ -70,9 +72,17 @@ fn main() {
 
     // Load our dictionary of word candidates
     let dict: Vec<String>;
-    if let Some(_dict_path) = args.dict_path {
-        dict = Vec::new();
-        // TODO allow for loading dictionaries
+    if let Some(dict_path) = args.dict_path {
+        let dict_str = match fs::read_to_string(dict_path) {
+            Ok(dict_str) => dict_str,
+            Err(err) => {
+                eprintln!("Error while opening dictionary: {:?}", err);
+                return
+            },
+        };
+        dict = dict_str.lines()
+            .map(|line| String::from(line))
+            .collect();
     }
     else{
         let dict_str = include_str!("../assets/dict.txt");
@@ -84,7 +94,6 @@ fn main() {
     }
     
     if args.dump_dict || args.dict_info {
-        
         // Determine and print dictionary stats
         if args.dict_info {
             println!("Total words: {}", dict.len());
