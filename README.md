@@ -1,6 +1,6 @@
 # passpls
 
-A small program to locally generate an easy to remember password. 
+A small cross-platform program to locally generate an easy to remember password. 
 
 Passwords security follows XKCD's popular scheme of building password entropy from 
 a list of easy to remember words. The built-in dictionary has ~57,000 unique words providing ~15.79 bits 
@@ -34,9 +34,11 @@ using the `clipboard` and `style` features during compilation.
 Jayden Dumouchel -- jdumouch@ualberta.ca | rottenfishbone@pm.me
 
 ### Notes
-This is untested on windows but *afaik* it will compile and run correctly.
+I have only tested this on (arch) linux and cannot speak to other platforms working or not. 
+
+That said, I deliberately used as cross-platform functionality as much possible and it should work for all platforms.
 
 ### Disclaimer
-I am not an experienced cryptographer. This was mostly for fun but according to my research
-will generate cryptographically secure and strong passwords. As always, a long and completely random 
+I am not an experienced cryptographer, this was mostly for fun. However, according to my research, passpls
+will generate cryptographically secure and strong passwords. As always, though, a long and completely random 
 password generated and stored into a password manager will likely yield stronger passwords.
