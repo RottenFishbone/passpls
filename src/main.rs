@@ -72,6 +72,7 @@ fn main() {
     let dict: Vec<String>;
     if let Some(_dict_path) = args.dict_path {
         dict = Vec::new();
+        // TODO allow for loading dictionaries
     }
     else{
         let dict_str = include_str!("../assets/dict.txt");
@@ -82,10 +83,60 @@ fn main() {
             .collect();
     }
     
-    if args.dump_dict {
-        for word in dict.iter() {
-            println!("{}", word);
+    if args.dump_dict || args.dict_info {
+        
+        // Determine and print dictionary stats
+        if args.dict_info {
+            println!("Total words: {}", dict.len());
+        
+            if dict.len() > 0 {
+                let (mut has_lower, mut has_upper, mut all_ascii) = (false, false, true);
+                let (mut has_numbers, mut has_symbols) = (false, false);
+                let mut avg: usize = 0;
+                for word in dict.iter() {
+                    avg += word.len();
+
+                    if all_ascii {
+                        if !word.is_ascii() {
+                            all_ascii = false;
+                            continue;
+                        }
+
+                        if !has_lower { has_lower = word.bytes().any(|c| c.is_ascii_lowercase()); }
+                        if !has_upper { has_upper = word.bytes().any(|c| c.is_ascii_uppercase()); }
+                        if !has_numbers { has_numbers = word.bytes().any(|c| c.is_ascii_digit()); }
+                        if !has_symbols { has_symbols = word.bytes().any(|c| c.is_ascii_punctuation()); }
+                    }
+                }
+                avg /= dict.len();
+
+                println!("Avg. length: {}", avg);
+                println!("All ascii: {}", all_ascii);
+                if all_ascii {
+                    println!("Case: {}", 
+                        if has_lower && !has_upper {
+                            "lowercase"
+                        }
+                        else if has_lower && has_upper {
+                            "mixedcase"
+                        }
+                        else {
+                            "uppercase"
+                        }
+                    );
+                    println!("Has numbers: {}", has_numbers);
+                    println!("Has symbols: {}", has_symbols);
+                }
+            }
         }
+
+        // Output entire dictionary
+        if args.dump_dict {
+            for word in dict.iter() {
+                println!("{}", word);
+            }
+        }
+
         return
     }
     
@@ -147,14 +198,14 @@ fn main() {
             }
         }}
         else {
-            // Compiled without styling, simlpy print unstyled
+            // Compiled without styling, simply print unstyled
             println!("{}", words.concat());
         }
 
         generated.push(words.concat());
     }
     
-    // Copy to clipboard, if desired
+    // Copy to clipboard, if desired (and enabled)
     #[cfg(feature = "clipboard")]
     if args.copy {
         // Determine the clipboard context from the host's display server
